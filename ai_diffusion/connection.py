@@ -12,7 +12,7 @@ from .settings import Settings, ServerMode, PerformancePreset, settings
 from .properties import Property, ObservableProperties
 from .localization import translate as _
 from . import util, eventloop
-
+from .util import client_logger as log
 
 class ConnectionState(Enum):
     disconnected = 0
@@ -73,7 +73,7 @@ class Connection(QObject, ObservableProperties):
     def sign_in(self):
         eventloop.run(self._sign_in(CloudClient.default_api_url))
 
-    async def _connect(self, url: str, mode: ServerMode, access_token=""):
+    async def _connect(self, url: str, mode: ServerMode, access_token="", access_cookie=""):
         if self.state is ConnectionState.connected:
             await self.disconnect()
         self.error = None
@@ -85,7 +85,9 @@ class Connection(QObject, ObservableProperties):
                     return
                 self._client = await CloudClient.connect(CloudClient.default_api_url, access_token)
             else:
-                self._client = await ComfyClient.connect(url)
+                log.info(f"ComfyClient.connect {url}")
+                self._client = await ComfyClient.connect(url,access_cookie=access_cookie)
+                log.info(f"ComfyClient.connected {url}")
                 self.missing_resources = self._client.missing_resources
 
             apply_performance_preset(settings, self._client.device_info)
@@ -111,7 +113,7 @@ class Connection(QObject, ObservableProperties):
 
     def connect(self):
         eventloop.run(
-            self._connect(settings.server_url, settings.server_mode, settings.access_token)
+            self._connect(settings.server_url, settings.server_mode, settings.access_token,access_cookie= settings.server_connect_cookie)
         )
 
     async def disconnect(self):  # type: ignore (hides QObject.disconnect)

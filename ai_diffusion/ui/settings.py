@@ -238,11 +238,21 @@ class ConnectionSettings(SettingsTab):
         connection_layout = QVBoxLayout()
         self._connection_widget.setLayout(connection_layout)
 
+        server_layout = QHBoxLayout()
+        add_header(connection_layout, Settings._server_connect_cookie)
+        self._server_connect_cookie = QLineEdit(self._connection_widget)
+        self._server_connect_cookie.textChanged.connect(self.write)
+        server_layout.addWidget(self._server_connect_cookie)
+        connection_layout.addLayout(server_layout)
+
         add_header(connection_layout, Settings._server_url)
         server_layout = QHBoxLayout()
         self._server_url = QLineEdit(self._connection_widget)
         self._server_url.textChanged.connect(self.write)
         server_layout.addWidget(self._server_url)
+        connection_layout.addLayout(server_layout)
+
+        server_layout = QHBoxLayout()
         self._connect_button = QPushButton(_("Connect"), self._connection_widget)
         self._connect_button.clicked.connect(self._connect)
         server_layout.addWidget(self._connect_button)
@@ -311,10 +321,12 @@ class ConnectionSettings(SettingsTab):
     def _read(self):
         self.server_mode = settings.server_mode
         self._server_url.setText(settings.server_url)
+        self._server_connect_cookie.setText(settings.server_connect_cookie)
 
     def _write(self):
         settings.server_mode = self.server_mode
         settings.server_url = self._server_url.text()
+        settings.server_connect_cookie = self._server_connect_cookie.text()
 
     def _change_server_mode(self, checked: bool):
         if self._server_cloud.isChecked():

@@ -127,6 +127,13 @@ class Settings(QObject):
         _("URL used to connect to a running ComfyUI server. Default is 127.0.0.1:8188 (local)."),
     )
 
+    server_connect_cookie: str
+    _server_connect_cookie = Setting(
+        _("Server Connect Cookie"),
+        "",
+        _("Cookie used to authenticate with the server. Required for external servers."),
+    )
+
     server_backend: ServerBackend
     _server_backend = Setting(_("Server Backend"), ServerBackend.default())
 

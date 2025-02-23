@@ -131,16 +131,16 @@ class RequestManager:
         self._requests[reply] = Request(url, future)
         return future
 
-    def get(self, url: str, bearer="", timeout: int | None = None):
-        return self.http("GET", url, bearer=bearer, timeout=timeout)
+    def get(self, url: str, bearer="", timeout: int | None = None,headers=None):
+        return self.http("GET", url, bearer=bearer, timeout=timeout,headers=headers)
 
-    def post(self, url: str, data: dict, bearer=""):
-        return self.http("POST", url, data, bearer=bearer)
+    def post(self, url: str, data: dict, bearer="",headers=None):
+        return self.http("POST", url, data, bearer=bearer,headers=headers)
 
-    def put(self, url: str, data: QByteArray | bytes):
-        return self.http("PUT", url, data)
+    def put(self, url: str, data: QByteArray | bytes,headers=None):
+        return self.http("PUT", url, data,headers=headers)
 
-    async def upload(self, url: str, data: QByteArray | bytes, sha256: str | None = None):
+    async def upload(self, url: str, data: QByteArray | bytes, sha256: str | None = None,headers=None):
         self._cleanup()
         if isinstance(data, bytes):
             data = QByteArray(data)
@@ -154,6 +154,9 @@ class RequestManager:
             QNetworkRequest.KnownHeaders.ContentTypeHeader, "application/octet-stream"
         )
         request.setHeader(QNetworkRequest.KnownHeaders.ContentLengthHeader, data.size())
+        if headers:
+            for key, value in headers:
+                request.setRawHeader(key.encode("utf-8"), value.encode("utf-8"))
         reply = self._net.put(request, data)
         assert reply is not None, f"Network request for {url} failed: reply is None"
 
@@ -171,10 +174,13 @@ class RequestManager:
                 yield (len(data), len(data))
                 break
 
-    def download(self, url: str):
+    def download(self, url: str,headers=None):
         self._cleanup()
         request = QNetworkRequest(QUrl(url))
         request.setAttribute(QNetworkRequest.Attribute.FollowRedirectsAttribute, True)
+        if headers:
+            for key, value in headers:
+                request.setRawHeader(key.encode("utf-8"), value.encode("utf-8"))
         reply = self._net.get(request)
         assert reply is not None, f"Network request for {url} failed: reply is None"
 
@@ -273,13 +279,16 @@ class DownloadHelper:
         return DownloadProgress(self._initial + self._received, self._initial + self._total, 0, 1)
 
 
-async def _try_download(network: QNetworkAccessManager, url: str, path: Path):
+async def _try_download(network: QNetworkAccessManager, url: str, path: Path,headers=None):
     out_file = QFile(str(path) + ".part")
     if not out_file.open(QFile.ReadWrite | QFile.Append):  # type: ignore
         raise Exception(_("Error during download: could not open {path} for writing", path=path))
 
     request = QNetworkRequest(QUrl(_map_host(url)))
     request.setAttribute(QNetworkRequest.FollowRedirectsAttribute, True)
+    if headers:
+        for key, value in headers:
+            request.setRawHeader(key.encode("utf-8"), value.encode("utf-8"))
     if out_file.size() > 0:
         log.info(f"Found {path}.part, resuming download from {out_file.size()} bytes")
         request.setRawHeader(b"Range", f"bytes={out_file.size()}-".encode("utf-8"))
@@ -326,10 +335,10 @@ async def _try_download(network: QNetworkAccessManager, url: str, path: Path):
     yield progress_helper.final()
 
 
-async def download(network: QNetworkAccessManager, url: str, path: Path):
+async def download(network: QNetworkAccessManager, url: str, path: Path,headers=None):
     for retry in range(3, 0, -1):
         try:
-            async for progress in _try_download(network, url, path):
+            async for progress in _try_download(network, url, path,headers=headers):
                 yield progress
             break
         except NetworkError as e:

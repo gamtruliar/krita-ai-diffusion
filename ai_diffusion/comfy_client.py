@@ -87,7 +87,7 @@ class ComfyClient(Client):
 
     default_url = "http://127.0.0.1:8188"
 
-    def __init__(self, url):
+    def __init__(self, url,header):
         self.url = url
         self.models = ClientModels()
         self._requests = RequestManager()
@@ -99,24 +99,32 @@ class ComfyClient(Client):
         self._queue = asyncio.Queue()
         self._jobs: deque[JobInfo] = deque()
         self._is_connected = False
+        self.httpHeaders =header.items()
 
     @staticmethod
-    async def connect(url=default_url, access_token=""):
-        client = ComfyClient(parse_url(url))
-        log.info(f"Connecting to {client.url}")
+    async def connect(url=default_url, access_token="",access_cookie=""):
+        headers = {
+            "cookie": access_cookie,
+        }
+        client = ComfyClient(parse_url(url),headers)
+
+        log.info(f"Connecting to {client.url} with cookie")
 
         # Retrieve system info
         client.device_info = DeviceInfo.parse(await client._get("system_stats"))
 
+
         # Try to establish websockets connection
         wsurl = websocket_url(client.url)
+        client.url = str.replace(client.url, "http://wss://", "wss://")
+        log.info(f"wsurl:{wsurl}")
         try:
-            async with websockets.connect(f"{wsurl}/ws?clientId={client._id}"):
+            async with websockets.connect(f"{wsurl}/ws?clientId={client._id}",additional_headers =headers):
                 pass
         except Exception as e:
             msg = _("Could not establish websocket connection at") + f" {wsurl}: {str(e)}"
             raise Exception(msg)
-
+        log.info(f"Connected to {client.url} with cookie")
         # Check custom nodes
         nodes = await client._get("object_info")
         missing = _check_for_missing_nodes(nodes)
@@ -191,10 +199,10 @@ class ComfyClient(Client):
         return client
 
     async def _get(self, op: str):
-        return await self._requests.get(f"{self.url}/{op}")
+        return await self._requests.get(f"{self.url}/{op}", headers=self.httpHeaders)
 
     async def _post(self, op: str, data: dict):
-        return await self._requests.post(f"{self.url}/{op}", data)
+        return await self._requests.post(f"{self.url}/{op}", data, headers=self.httpHeaders)
 
     async def enqueue(self, work: WorkflowInput, front: bool = False):
         job = JobInfo.create(work, front=front)
@@ -484,7 +492,7 @@ class ComfyClient(Client):
                 url = f"{self.url}/api/etn/upload/loras/{file.id}"
                 log.info(f"Uploading lora model {file.id} to {url}")
                 data = file.path.read_bytes()
-                async for sent, total in self._requests.upload(url, data):
+                async for sent, total in self._requests.upload(url, data, headers=self.httpHeaders):
                     progress = sent / max(sent, total)
                     await self._report(ClientEvent.upload, local_job_id, progress)
 
@@ -554,10 +562,11 @@ def parse_url(url: str):
 
 
 def websocket_url(url_http: str):
-    return url_http.replace("http", "ws", 1)
+    return url_http.replace("http", "wss", 1)
 
 
 def _check_for_missing_nodes(nodes: dict):
+    log.info("Checking for missing custom nodes:"+str(nodes))
     def missing(node: str, package: CustomNode):
         if node not in nodes:
             log.error(f"Missing required node {node} from package {package.name} ({package.url})")

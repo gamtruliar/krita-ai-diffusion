@@ -119,7 +119,7 @@ class Root(QObject):
                     settings.server_url, ServerMode.cloud, settings.access_token
                 )
             elif settings.server_mode in [ServerMode.undefined, ServerMode.external]:
-                await connection._connect(settings.server_url, ServerMode.external)
+                await connection._connect(settings.server_url, ServerMode.external,access_cookie=settings.server_connect_cookie)
                 if settings.server_mode is ServerMode.undefined:
                     if connection.state is ConnectionState.connected:
                         settings.server_mode = ServerMode.external
