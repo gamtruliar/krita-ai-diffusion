@@ -248,7 +248,7 @@ class ComfyClient(Client):
     async def _listen(self):
         url = websocket_url(self.url)
         async for websocket in websockets.connect(
-            f"{url}/ws?clientId={self._id}", max_size=2**30, ping_timeout=60
+            f"{url}/ws?clientId={self._id}", max_size=2**30, ping_timeout=60, additional_headers=self.httpHeaders
         ):
             try:
                 await self._subscribe_workflows()
@@ -556,13 +556,13 @@ class ComfyClient(Client):
 def parse_url(url: str):
     url = url.strip("/")
     url = url.replace("0.0.0.0", "127.0.0.1")
-    if not url.startswith("http"):
-        url = f"http://{url}"
+    if not url.startswith("https"):
+        url = f"https://{url}"
     return url
 
 
 def websocket_url(url_http: str):
-    return url_http.replace("http", "wss", 1)
+    return url_http.replace("https", "wss", 1)
 
 
 def _check_for_missing_nodes(nodes: dict):

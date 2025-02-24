@@ -239,8 +239,10 @@ class ConnectionSettings(SettingsTab):
         self._connection_widget.setLayout(connection_layout)
 
         server_layout = QHBoxLayout()
+        server_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         add_header(connection_layout, Settings._server_connect_cookie)
         self._server_connect_cookie = QLineEdit(self._connection_widget)
+        self._server_connect_cookie.setFixedWidth(400)
         self._server_connect_cookie.textChanged.connect(self.write)
         server_layout.addWidget(self._server_connect_cookie)
         connection_layout.addLayout(server_layout)
@@ -326,7 +328,7 @@ class ConnectionSettings(SettingsTab):
     def _write(self):
         settings.server_mode = self.server_mode
         settings.server_url = self._server_url.text()
-        settings.server_connect_cookie = self._server_connect_cookie.text()
+        settings.server_connect_cookie = self._server_connect_cookie.text().strip()
 
     def _change_server_mode(self, checked: bool):
         if self._server_cloud.isChecked():
