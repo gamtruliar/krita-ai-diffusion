@@ -142,7 +142,7 @@ class Bounds(NamedTuple):
 
     @property
     def is_zero(self):
-        return self.width == 0 and self.height == 0
+        return self.width * self.height == 0
 
     def is_within(self, x: int, y: int):
         return x >= 0 and x < self.width and y >= 0 and y < self.height
@@ -202,8 +202,8 @@ class Bounds(NamedTuple):
         """Restrict bounds to be inside another bounds."""
         x = max(within.x, bounds.x)
         y = max(within.y, bounds.y)
-        width = min(within.x + within.width, bounds.x + bounds.width) - x
-        height = min(within.y + within.height, bounds.y + bounds.height) - y
+        width = max(0, min(within.x + within.width, bounds.x + bounds.width) - x)
+        height = max(0, min(within.y + within.height, bounds.y + bounds.height) - y)
         return Bounds(x, y, width, height)
 
     @staticmethod
