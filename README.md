@@ -1,6 +1,26 @@
 <h1><img width="64px" src="ai_diffusion/icons/logo-128.png"> Generative AI <i>for Krita</i></h1>
+
+### Fork
+
 **This Fork is for finding a way to connect comfy ui backend which in the back of cloudflare zero trust**
 You can copy the cookie with CF_Authorization from chrome F12 very easily
+
+### Usage:
+
+1. Open chrome, login to cloudflare zero trust to your comfy page
+2. press F12
+3. press F5
+4. go to network part, find a file with cookie
+<img src="docs/chrome.png">
+5. copy entire cookie 
+6. go to Krita plugin Configure
+<img src="docs/setting.png">
+7. patse it to cookie input box
+8. connect 
+
+
+
+
 
 ✨[Features](#features) | ⭳ [Download](https://github.com/Acly/krita-ai-diffusion/releases/latest) | 🛠️[Installation](https://docs.interstice.cloud/installation) | 🎞️ [Video](https://youtu.be/Ly6USRwTHe0) | 🖼️[Gallery](#gallery) | 📖[User Guide](https://docs.interstice.cloud) | 💬[Discussion](https://github.com/Acly/krita-ai-diffusion/discussions) | 🗣️[Discord](https://discord.gg/pWyzHfHHhU)
 
