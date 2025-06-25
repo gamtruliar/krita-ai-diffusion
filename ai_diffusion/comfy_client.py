@@ -560,11 +560,14 @@ def parse_url(url: str):
     url = url.replace("0.0.0.0", "127.0.0.1")
     if not url.startswith("https"):
         url = f"https://{url}"
+    if url.startswith("https://127.0.0.1"):
+        url = url.replace("https", "http")
     return url
 
 
 def websocket_url(url_http: str):
-    return url_http.replace("https", "wss", 1)
+    url=url_http.replace("https", "wss", 1)
+    return url.replace("http", "ws", 1)
 
 
 def _check_for_missing_nodes(nodes: dict):
